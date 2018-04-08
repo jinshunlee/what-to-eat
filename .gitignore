@@ -3,6 +3,4 @@ node_modules/
 tmp/
 dist/
 yarn.lock
-package.json
-package-lock.json
 
