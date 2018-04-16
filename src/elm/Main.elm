@@ -4,6 +4,8 @@ import Html exposing (Html, div, p, text, button)
 import Html.Events exposing (onClick)
 import SharedModels exposing (GMPos)
 import GMaps exposing (moveMap, mapMoved)
+import Geolocation exposing (Location)
+import Task
 
 
 -- MAIN
@@ -35,6 +37,7 @@ type alias Model =
 type Msg
     = Move Direction
     | MapMoved GMPos
+    | Update (Result Geolocation.Error Geolocation.Location)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -54,6 +57,20 @@ update msg model =
             , Cmd.none
             )
 
+        Update (Ok location) ->
+            let
+                newPos =
+                    { lat = location.latitude, lng = location.longitude }
+            in
+                ( { model | pos = newPos }
+                , moveMap newPos
+                )
+
+        Update (Err err) ->
+            ( model
+            , Cmd.none
+            )
+
 
 type Direction
     = North
@@ -66,16 +83,16 @@ movePos : GMPos -> Direction -> GMPos
 movePos pos direction =
     case direction of
         North ->
-            { pos | lat = pos.lat + 1 }
+            { pos | lat = pos.lat + 0.001 }
 
         South ->
-            { pos | lat = pos.lat - 1 }
+            { pos | lat = pos.lat - 0.001 }
 
         West ->
-            { pos | lng = pos.lng - 1 }
+            { pos | lng = pos.lng - 0.001 }
 
         East ->
-            { pos | lng = pos.lng + 1 }
+            { pos | lng = pos.lng + 0.001 }
 
 
 
@@ -100,7 +117,10 @@ view model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    mapMoved MapMoved
+    Sub.batch
+        [ mapMoved MapMoved
+        , Geolocation.changes (Update << Ok)
+        ]
 
 
 
@@ -109,8 +129,6 @@ subscriptions model =
 
 init : ( Model, Cmd Msg )
 init =
-    let
-        vienna =
-            (GMPos 1.292393 103.77572600000008)
-    in
-        ( Model vienna, moveMap vienna )
+    ( Model (GMPos 1.292393 103.77572600000008)
+    , Task.attempt Update Geolocation.now
+    )
