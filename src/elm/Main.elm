@@ -27,6 +27,7 @@ main =
 
 type alias Model =
     { pos : GMPos
+    , msg : String
     }
 
 
@@ -35,23 +36,13 @@ type alias Model =
 
 
 type Msg
-    = Move Direction
-    | MapMoved GMPos
+    = MapMoved GMPos
     | Update (Result Geolocation.Error Geolocation.Location)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Move direction ->
-            let
-                newPos =
-                    movePos model.pos direction
-            in
-                ( { model | pos = newPos }
-                , moveMap newPos
-                )
-
         MapMoved newPos ->
             ( { model | pos = newPos }
             , Cmd.none
@@ -67,32 +58,9 @@ update msg model =
                 )
 
         Update (Err err) ->
-            ( model
+            ( { model | msg = toString err }
             , Cmd.none
             )
-
-
-type Direction
-    = North
-    | South
-    | West
-    | East
-
-
-movePos : GMPos -> Direction -> GMPos
-movePos pos direction =
-    case direction of
-        North ->
-            { pos | lat = pos.lat + 0.001 }
-
-        South ->
-            { pos | lat = pos.lat - 0.001 }
-
-        West ->
-            { pos | lng = pos.lng - 0.001 }
-
-        East ->
-            { pos | lng = pos.lng + 0.001 }
 
 
 
@@ -104,10 +72,6 @@ view model =
     div []
         [ p [] [ text ("Latitude: " ++ toString model.pos.lat) ]
         , p [] [ text ("Longitude: " ++ toString model.pos.lng) ]
-        , button [ onClick (Move North) ] [ text "North" ]
-        , button [ onClick (Move South) ] [ text "South" ]
-        , button [ onClick (Move West) ] [ text "West" ]
-        , button [ onClick (Move East) ] [ text "East" ]
         ]
 
 
@@ -129,6 +93,6 @@ subscriptions model =
 
 init : ( Model, Cmd Msg )
 init =
-    ( Model (GMPos 1.292393 103.77572600000008)
+    ( { pos = GMPos 1.292393 103.77572600000008, msg = "test" }
     , Task.attempt Update Geolocation.now
     )
