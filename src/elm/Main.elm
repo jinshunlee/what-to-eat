@@ -36,18 +36,12 @@ type alias Model =
 
 
 type Msg
-    = MapMoved GMPos
-    | Update (Result Geolocation.Error Geolocation.Location)
+    = Update (Result Geolocation.Error Geolocation.Location)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        MapMoved newPos ->
-            ( { model | pos = newPos, msg = "Map Moved" }
-            , Cmd.none
-            )
-
         Update (Ok location) ->
             let
                 newPos =
@@ -82,10 +76,7 @@ view model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Sub.batch
-        [ mapMoved MapMoved
-        , Geolocation.changes (Update << Ok)
-        ]
+    Geolocation.changes (Update << Ok)
 
 
 
@@ -94,6 +85,6 @@ subscriptions model =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { pos = GMPos 1.292393 103.77572600000008, msg = "Initialized" }
+    ( { pos = GMPos 1.292393 103.77572600000008, msg = "Trying to get current location.." }
     , Task.attempt Update Geolocation.now
     )
