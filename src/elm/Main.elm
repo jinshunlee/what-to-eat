@@ -63,7 +63,7 @@ update msg model =
                     { lat = location.latitude, lng = location.longitude }
             in
                 ( { model | pos = newPos }
-                , moveMap newPos
+                , Cmd.none
                 )
 
         Update (Err err) ->

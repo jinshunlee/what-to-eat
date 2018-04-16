@@ -12,9 +12,9 @@ map.ports.moveMap.subscribe(function(gmPos) {
     var myLatlng = new google.maps.LatLng(gmPos);
     gmap.setCenter(myLatlng);
 });
-var myLatlng = new google.maps.LatLng(0, 0);
+var myLatlng = new google.maps.LatLng(1.292393, 103.77572600000008);
 var mapOptions = {
-  zoom: 17,
+  zoom: 17.9,
   center: myLatlng
 };
 var gmap = new google.maps.Map(mapDiv, mapOptions);
