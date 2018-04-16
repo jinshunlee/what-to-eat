@@ -44,7 +44,7 @@ update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         MapMoved newPos ->
-            ( { model | pos = newPos }
+            ( { model | pos = newPos, msg = "Map Moved" }
             , Cmd.none
             )
 
@@ -53,8 +53,8 @@ update msg model =
                 newPos =
                     { lat = location.latitude, lng = location.longitude }
             in
-                ( { model | pos = newPos }
-                , Cmd.none
+                ( { model | pos = newPos, msg = "Retrived Location" }
+                , moveMap newPos
                 )
 
         Update (Err err) ->
@@ -70,7 +70,8 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div []
-        [ p [] [ text ("Latitude: " ++ toString model.pos.lat) ]
+        [ p [] [ text ("Message: " ++ model.msg) ]
+        , p [] [ text ("Latitude: " ++ toString model.pos.lat) ]
         , p [] [ text ("Longitude: " ++ toString model.pos.lng) ]
         ]
 
@@ -93,6 +94,6 @@ subscriptions model =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { pos = GMPos 1.292393 103.77572600000008, msg = "test" }
+    ( { pos = GMPos 1.292393 103.77572600000008, msg = "Initialized" }
     , Task.attempt Update Geolocation.now
     )
