@@ -111,6 +111,6 @@ init : ( Model, Cmd Msg )
 init =
     let
         vienna =
-            (GMPos 48.2206636 16.3100206)
+            (GMPos 1.292393 103.77572600000008)
     in
         ( Model vienna, moveMap vienna )

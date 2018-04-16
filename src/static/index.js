@@ -14,7 +14,7 @@ map.ports.moveMap.subscribe(function(gmPos) {
 });
 var myLatlng = new google.maps.LatLng(0, 0);
 var mapOptions = {
-  zoom: 6,
+  zoom: 17,
   center: myLatlng
 };
 var gmap = new google.maps.Map(mapDiv, mapOptions);
