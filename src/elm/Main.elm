@@ -39,6 +39,8 @@ type alias Model =
     , msg : String
     , input : String
     , modalVisibility : Modal.Visibility
+    , restaurantResult : Restaurants
+    , currentIndex : Int
     }
 
 
@@ -149,7 +151,7 @@ view : Model -> Html Msg
 view model =
     div []
         [ navigationbar model
-        , p [] [ text ("Message: " ++ model.msg) ]
+        , p [] [ text (toString model) ]
         ]
 
 
@@ -233,6 +235,8 @@ initModel =
     , msg = "Trying to get current location.."
     , input = ""
     , modalVisibility = Modal.hidden
+    , restaurantResult = []
+    , currentIndex = 0
     }
 
 
@@ -276,7 +280,9 @@ type alias Restaurants =
 
 decodeRestaurant : Decode.Decoder Restaurant
 decodeRestaurant =
-    Decode.map2 Restaurant (Decode.at [ "restaurant", "name" ] Decode.string) (Decode.at [ "restaurant", "user_rating", "aggregate_rating" ] Decode.string)
+    Decode.map2 Restaurant
+        (Decode.at [ "restaurant", "name" ] Decode.string)
+        (Decode.at [ "restaurant", "user_rating", "aggregate_rating" ] Decode.string)
 
 
 decodeRestaurants : Decode.Decoder (List Restaurant)
