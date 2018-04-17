@@ -65,9 +65,9 @@ update msg model =
                 newPos =
                     { lat = location.latitude, lng = location.longitude }
             in
-                ( { model | pos = newPos, msg = "Automatically Retrived Location" }
-                , moveMap newPos
-                )
+            ( { model | pos = newPos, msg = "Automatically Retrived Location" }
+            , moveMap newPos
+            )
 
         Update (Err err) ->
             ( { model | msg = toString err }
@@ -80,29 +80,34 @@ update msg model =
                     Geocoding.requestForAddress "AIzaSyAduosinhGUarThepjoSF5_rjRgTQM9h2U" locationString
                         |> Geocoding.send MyGeocoderResult
             in
-                ( { model | modalVisibility = Modal.hidden, input = "" }
-                , request
-                )
+            ( { model | modalVisibility = Modal.hidden, input = "" }
+            , request
+            )
 
         MyGeocoderResult (Ok response) ->
             let
                 result =
                     List.head response.results
             in
-                case result of
-                    Just value ->
-                        let
-                            newPos =
-                                { lat = value.geometry.location.latitude, lng = value.geometry.location.longitude }
-                        in
-                            ( { model | pos = newPos, msg = "Retrieved Location via text input" }
-                            , moveMap newPos
-                            )
+            case result of
+                Just value ->
+                    let
+                        newPos =
+                            { lat = value.geometry.location.latitude
+                            , lng = value.geometry.location.longitude
+                            }
+                    in
+                    ( { model
+                        | pos = newPos
+                        , msg = "Retrieved Location via text input"
+                      }
+                    , moveMap newPos
+                    )
 
-                    Nothing ->
-                        ( { model | msg = "Error" }
-                        , Cmd.none
-                        )
+                Nothing ->
+                    ( { model | msg = "Error" }
+                    , Cmd.none
+                    )
 
         MyGeocoderResult (Err err) ->
             ( { model | msg = toString err }
@@ -144,21 +149,34 @@ view : Model -> Html Msg
 view model =
     div []
         [ navigationbar model
-        , button [ onClick GetRestaurant ] [ text "Get Restaurant" ]
         , p [] [ text ("Message: " ++ model.msg) ]
         ]
 
 
 navigationbar : Model -> Html Msg
 navigationbar model =
-    div [ class "navigationbar" ]
-        [ Button.button
-            [ Button.large
-            , Button.outlineSecondary
-            , Button.attrs [ onClick ShowModal ]
+    div [ id "menu-outer" ]
+        [ div [ class "table" ]
+            [ Html.ul [ id "horizontal-list" ]
+                [ Html.li []
+                    [ Button.button
+                        [ Button.large
+                        , Button.outlineSecondary
+                        , Button.attrs [ onClick ShowModal ]
+                        ]
+                        [ text "Change Location" ]
+                    ]
+                , Html.li []
+                    [ Button.button
+                        [ Button.large
+                        , Button.outlineSecondary
+                        , Button.attrs [ onClick GetRestaurant ]
+                        ]
+                        [ text "Get Restaurant" ]
+                    ]
+                , Html.li [] [ modal model ]
+                ]
             ]
-            [ text "Change Location" ]
-        , modal model
         ]
 
 
@@ -184,7 +202,7 @@ modal model =
                 [ Button.outlineSuccess
                 , Button.attrs [ onClick (SendGeocodeRequest model.input) ]
                 ]
-                [ text "Get Location" ]
+                [ text "Enter" ]
             , Button.button
                 [ Button.outlineDanger
                 , Button.attrs [ onClick CloseModal ]
@@ -226,23 +244,6 @@ init =
 
 
 
--- CSS
-
-
-myStyle : Html.Attribute msg
-myStyle =
-    style
-        [ ( "width", "90%" )
-        , ( "height", "40px" )
-        , ( "padding", "10px 0" )
-        , ( "font-size", "2em" )
-        , ( "text-align", "center" )
-        , ( "position", "absolute" )
-        , ( "top", "50px" )
-        ]
-
-
-
 -- HTTP
 
 
@@ -252,26 +253,37 @@ getRestaurant lat lng =
         url =
             "https://developers.zomato.com/api/v2.1/search?lat=" ++ toString lat ++ "&lon=" ++ toString lng
     in
-        Http.send NewZomatoRequest
-            (Http.request
-                { method = "GET"
-                , headers = [ header "user-key" "cf56a7f076c8d0a24251c6ae612709cf" ]
-                , url = url
-                , body = Http.emptyBody
-                , expect = Http.expectJson decodeZomatoJSON
-                , timeout = Nothing
-                , withCredentials = False
-                }
-            )
+    Http.send NewZomatoRequest
+        (Http.request
+            { method = "GET"
+            , headers = [ header "user-key" "cf56a7f076c8d0a24251c6ae612709cf" ]
+            , url = url
+            , body = Http.emptyBody
+            , expect = Http.expectJson decodeZomatoJSON
+            , timeout = Nothing
+            , withCredentials = False
+            }
+        )
 
-type alias Restaurant = { name: String, rating: String }
-type alias Restaurants = List Restaurant
+
+type alias Restaurant =
+    { name : String, rating : String }
+
+
+type alias Restaurants =
+    List Restaurant
+
 
 decodeRestaurant : Decode.Decoder Restaurant
-decodeRestaurant = Decode.map2 Restaurant (Decode.at ["restaurant", "name"] Decode.string) (Decode.at ["restaurant", "user_rating", "aggregate_rating"] Decode.string)
+decodeRestaurant =
+    Decode.map2 Restaurant (Decode.at [ "restaurant", "name" ] Decode.string) (Decode.at [ "restaurant", "user_rating", "aggregate_rating" ] Decode.string)
+
 
 decodeRestaurants : Decode.Decoder (List Restaurant)
-decodeRestaurants = Decode.list decodeRestaurant
+decodeRestaurants =
+    Decode.list decodeRestaurant
+
 
 decodeZomatoJSON : Decode.Decoder (List Restaurant)
-decodeZomatoJSON = Decode.at ["restaurants"] decodeRestaurants
+decodeZomatoJSON =
+    Decode.at [ "restaurants" ] decodeRestaurants
