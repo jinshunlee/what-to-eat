@@ -1,16 +1,16 @@
 module Main exposing (..)
 
+import GMaps exposing (mapMoved, moveMap)
 import Geocoding exposing (..)
 import Geolocation exposing (Location)
-import GMaps exposing (moveMap, mapMoved)
-import Html exposing (Html, div, p, text, button, input)
-import Html.Events exposing (onClick, onInput, on, targetValue)
+import Html exposing (Html, button, div, input, p, text)
 import Html.Attributes exposing (..)
+import Html.Events exposing (on, onClick, onInput, targetValue)
 import Http exposing (..)
-import SharedModels exposing (GMPos)
-import Task
 import Json.Decode as Decode
 import List
+import SharedModels exposing (GMPos)
+import Task
 
 
 -- MAIN
@@ -58,9 +58,9 @@ update msg model =
                 newPos =
                     { lat = location.latitude, lng = location.longitude }
             in
-                ( { model | pos = newPos, msg = "Automatically Retrived Location" }
-                , moveMap newPos
-                )
+            ( { model | pos = newPos, msg = "Automatically Retrived Location" }
+            , moveMap newPos
+            )
 
         Update (Err err) ->
             ( { model | msg = toString err }
@@ -73,29 +73,29 @@ update msg model =
                     Geocoding.requestForAddress "AIzaSyAduosinhGUarThepjoSF5_rjRgTQM9h2U" locationString
                         |> Geocoding.send MyGeocoderResult
             in
-                ( model
-                , request
-                )
+            ( model
+            , request
+            )
 
         MyGeocoderResult (Ok response) ->
             let
                 result =
-                    List.head (response.results)
+                    List.head response.results
             in
-                case result of
-                    Just value ->
-                        let
-                            newPos =
-                                { lat = value.geometry.location.latitude, lng = value.geometry.location.longitude }
-                        in
-                            ( { model | pos = newPos, msg = "Retrieved Location via text input" }
-                            , moveMap newPos
-                            )
+            case result of
+                Just value ->
+                    let
+                        newPos =
+                            { lat = value.geometry.location.latitude, lng = value.geometry.location.longitude }
+                    in
+                    ( { model | pos = newPos, msg = "Retrieved Location via text input" }
+                    , moveMap newPos
+                    )
 
-                    Nothing ->
-                        ( { model | msg = "Error" }
-                        , Cmd.none
-                        )
+                Nothing ->
+                    ( { model | msg = "Error" }
+                    , Cmd.none
+                    )
 
         MyGeocoderResult (Err err) ->
             ( { model | msg = toString err }
@@ -132,7 +132,7 @@ view model =
     div []
         [ input [ placeholder "Enter your location", onInput Change, myStyle ] []
         , button [ onClick (SendGeocodeRequest model.input) ] [ text "Get Location" ]
-        , button [ onClick (GetRestaurant) ] [ text "Get Restaurant" ]
+        , button [ onClick GetRestaurant ] [ text "Get Restaurant" ]
         , p [] [ text ("Message: " ++ model.msg) ]
         ]
 
@@ -169,6 +169,8 @@ myStyle =
         , ( "padding", "10px 0" )
         , ( "font-size", "2em" )
         , ( "text-align", "center" )
+        , ( "position", "absolute" )
+        , ( "top", "50px" )
         ]
 
 
@@ -180,19 +182,19 @@ getRestaurant : Float -> Float -> Cmd Msg
 getRestaurant lat lng =
     let
         url =
-            "https://developers.zomato.com/api/v2.1/geocode?lat=" ++ toString lat  ++ "&lon=" ++ toString lng
+            "https://developers.zomato.com/api/v2.1/geocode?lat=" ++ toString lat ++ "&lon=" ++ toString lng
     in
-        Http.send NewZomatoRequest
-            (Http.request
-                { method = "GET"
-                , headers = [header "user-key" "cf56a7f076c8d0a24251c6ae612709cf"]
-                , url = url
-                , body = Http.emptyBody
-                , expect = Http.expectJson decodeZomatoUrl
-                , timeout = Nothing
-                , withCredentials = False
-                }
-            )
+    Http.send NewZomatoRequest
+        (Http.request
+            { method = "GET"
+            , headers = [ header "user-key" "cf56a7f076c8d0a24251c6ae612709cf" ]
+            , url = url
+            , body = Http.emptyBody
+            , expect = Http.expectJson decodeZomatoUrl
+            , timeout = Nothing
+            , withCredentials = False
+            }
+        )
 
 
 decodeZomatoUrl : Decode.Decoder String
