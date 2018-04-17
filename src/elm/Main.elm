@@ -15,6 +15,7 @@ import Json.Decode as Decode
 import List
 import SharedModels exposing (GMPos)
 import Task
+import String exposing (..)
 
 
 -- MAIN
@@ -121,10 +122,26 @@ update msg model =
             , Cmd.none
             )
 
-        NewZomatoRequest (Ok newUrl) ->
-            ( { model | msg = toString newUrl }
-            , Cmd.none
-            )
+        NewZomatoRequest (Ok results) ->
+            let
+                result =
+                    List.head results
+            in
+                case result of
+                    Just result ->
+                        let
+                            newPos =
+                                { lat = Result.withDefault 0 (String.toFloat result.lat)
+                                , lng = Result.withDefault 0 (String.toFloat result.lng) }
+                        in
+                            ( { model | pos = newPos, msg = "Retrieved Suggested Restaurant", restaurantResult = results }
+                            , moveMap newPos
+                            )
+
+                    Nothing ->
+                        ( { model | msg = "Error" }
+                        , Cmd.none
+                        )
 
         NewZomatoRequest (Err err) ->
             ( { model | msg = toString err }
@@ -255,7 +272,7 @@ getRestaurant : Float -> Float -> Cmd Msg
 getRestaurant lat lng =
     let
         url =
-            "https://developers.zomato.com/api/v2.1/search?lat=" ++ toString lat ++ "&lon=" ++ toString lng
+            "https://developers.zomato.com/api/v2.1/search?sort=real_distance&count=10&lat=" ++ toString lat ++ "&lon=" ++ toString lng
     in
     Http.send NewZomatoRequest
         (Http.request
@@ -270,8 +287,17 @@ getRestaurant lat lng =
         )
 
 
+
+
 type alias Restaurant =
-    { name : String, rating : String }
+    { name : String
+    , rating : String
+    , lat : String
+    , lng : String
+    , featured_image : String
+    , url : String
+    , address : String
+    }
 
 
 type alias Restaurants =
@@ -280,9 +306,16 @@ type alias Restaurants =
 
 decodeRestaurant : Decode.Decoder Restaurant
 decodeRestaurant =
-    Decode.map2 Restaurant
+    Decode.map7 Restaurant
         (Decode.at [ "restaurant", "name" ] Decode.string)
         (Decode.at [ "restaurant", "user_rating", "aggregate_rating" ] Decode.string)
+        (Decode.at [ "restaurant", "location", "latitude" ] Decode.string)
+        (Decode.at [ "restaurant", "location", "longitude" ] Decode.string)
+        (Decode.at [ "restaurant", "featured_image" ] Decode.string)
+        (Decode.at [ "restaurant", "url" ] Decode.string)
+        (Decode.at [ "restaurant", "location", "address" ] Decode.string)
+
+
 
 
 decodeRestaurants : Decode.Decoder (List Restaurant)
