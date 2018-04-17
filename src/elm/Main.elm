@@ -58,7 +58,7 @@ update msg model =
                 newPos =
                     { lat = location.latitude, lng = location.longitude }
             in
-                ( { model | pos = newPos, msg = "Retrived Location" }
+                ( { model | pos = newPos, msg = "Automatically Retrived Location" }
                 , moveMap newPos
                 )
 
@@ -88,7 +88,7 @@ update msg model =
                             newPos =
                                 { lat = value.geometry.location.latitude, lng = value.geometry.location.longitude }
                         in
-                            ( { model | pos = newPos, msg = "Retrieved Location via search" }
+                            ( { model | pos = newPos, msg = "Retrieved Location via text input" }
                             , moveMap newPos
                             )
 
@@ -134,9 +134,6 @@ view model =
         , button [ onClick (SendGeocodeRequest model.input) ] [ text "Get Location" ]
         , button [ onClick (GetRestaurant) ] [ text "Get Restaurant" ]
         , p [] [ text ("Message: " ++ model.msg) ]
-        , p [] [ text ("Input: " ++ toString model.input) ]
-        , p [] [ text ("Latitude: " ++ toString model.pos.lat) ]
-        , p [] [ text ("Longitude: " ++ toString model.pos.lng) ]
         ]
 
 
