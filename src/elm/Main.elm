@@ -49,7 +49,7 @@ type alias Model =
 type Msg
     = Update (Result Geolocation.Error Geolocation.Location)
     | MyGeocoderResult (Result Http.Error Geocoding.Response)
-    | NewZomatoRequest (Result Http.Error String)
+    | NewZomatoRequest (Result Http.Error Restaurants)
     | SendGeocodeRequest String
     | Change String
     | GetRestaurant
@@ -65,9 +65,9 @@ update msg model =
                 newPos =
                     { lat = location.latitude, lng = location.longitude }
             in
-            ( { model | pos = newPos, msg = "Automatically Retrived Location" }
-            , moveMap newPos
-            )
+                ( { model | pos = newPos, msg = "Automatically Retrived Location" }
+                , moveMap newPos
+                )
 
         Update (Err err) ->
             ( { model | msg = toString err }
@@ -80,29 +80,29 @@ update msg model =
                     Geocoding.requestForAddress "AIzaSyAduosinhGUarThepjoSF5_rjRgTQM9h2U" locationString
                         |> Geocoding.send MyGeocoderResult
             in
-            ( { model | modalVisibility = Modal.hidden, input = "" }
-            , request
-            )
+                ( { model | modalVisibility = Modal.hidden, input = "" }
+                , request
+                )
 
         MyGeocoderResult (Ok response) ->
             let
                 result =
                     List.head response.results
             in
-            case result of
-                Just value ->
-                    let
-                        newPos =
-                            { lat = value.geometry.location.latitude, lng = value.geometry.location.longitude }
-                    in
-                    ( { model | pos = newPos, msg = "Retrieved Location via text input" }
-                    , moveMap newPos
-                    )
+                case result of
+                    Just value ->
+                        let
+                            newPos =
+                                { lat = value.geometry.location.latitude, lng = value.geometry.location.longitude }
+                        in
+                            ( { model | pos = newPos, msg = "Retrieved Location via text input" }
+                            , moveMap newPos
+                            )
 
-                Nothing ->
-                    ( { model | msg = "Error" }
-                    , Cmd.none
-                    )
+                    Nothing ->
+                        ( { model | msg = "Error" }
+                        , Cmd.none
+                        )
 
         MyGeocoderResult (Err err) ->
             ( { model | msg = toString err }
@@ -250,21 +250,28 @@ getRestaurant : Float -> Float -> Cmd Msg
 getRestaurant lat lng =
     let
         url =
-            "https://developers.zomato.com/api/v2.1/geocode?lat=" ++ toString lat ++ "&lon=" ++ toString lng
+            "https://developers.zomato.com/api/v2.1/search?lat=" ++ toString lat ++ "&lon=" ++ toString lng
     in
-    Http.send NewZomatoRequest
-        (Http.request
-            { method = "GET"
-            , headers = [ header "user-key" "cf56a7f076c8d0a24251c6ae612709cf" ]
-            , url = url
-            , body = Http.emptyBody
-            , expect = Http.expectJson decodeZomatoUrl
-            , timeout = Nothing
-            , withCredentials = False
-            }
-        )
+        Http.send NewZomatoRequest
+            (Http.request
+                { method = "GET"
+                , headers = [ header "user-key" "cf56a7f076c8d0a24251c6ae612709cf" ]
+                , url = url
+                , body = Http.emptyBody
+                , expect = Http.expectJson decodeZomatoJSON
+                , timeout = Nothing
+                , withCredentials = False
+                }
+            )
 
+type alias Restaurant = { name: String, rating: String }
+type alias Restaurants = List Restaurant
 
-decodeZomatoUrl : Decode.Decoder String
-decodeZomatoUrl =
-    Decode.at [ "location", "nearby_restaurants" ] Decode.string
+decodeRestaurant : Decode.Decoder Restaurant
+decodeRestaurant = Decode.map2 Restaurant (Decode.at ["restaurant", "name"] Decode.string) (Decode.at ["restaurant", "user_rating", "aggregate_rating"] Decode.string)
+
+decodeRestaurants : Decode.Decoder (List Restaurant)
+decodeRestaurants = Decode.list decodeRestaurant
+
+decodeZomatoJSON : Decode.Decoder (List Restaurant)
+decodeZomatoJSON = Decode.at ["restaurants"] decodeRestaurants
