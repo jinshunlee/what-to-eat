@@ -11,6 +11,7 @@ map.ports.moveMap.subscribe(function(gmPos) {
     console.log("received", gmPos);
     var myLatlng = new google.maps.LatLng(gmPos);
     gmap.setCenter(myLatlng);
+    marker.setPosition(myLatlng)
 });
 var myLatlng = new google.maps.LatLng(1.292393, 103.77572600000008);
 var mapOptions = {
@@ -18,6 +19,11 @@ var mapOptions = {
   center: myLatlng
 };
 var gmap = new google.maps.Map(mapDiv, mapOptions);
+var marker = new google.maps.Marker({
+  position: myLatlng,
+  title: "Current Location"
+});
+marker.setMap(gmap);
 gmap.addListener('drag', function() {
   var newPos = {
     lat: gmap.getCenter().lat(),
