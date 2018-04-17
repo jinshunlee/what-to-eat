@@ -1,14 +1,15 @@
 module Main exposing (..)
 
+import Geocoding exposing (..)
+import Geolocation exposing (Location)
+import GMaps exposing (moveMap, mapMoved)
 import Html exposing (Html, div, p, text, button, input)
 import Html.Events exposing (onClick, onInput, on, targetValue)
 import Html.Attributes exposing (..)
 import Http exposing (..)
 import SharedModels exposing (GMPos)
-import GMaps exposing (moveMap, mapMoved)
-import Geolocation exposing (Location)
-import Geocoding exposing (..)
 import Task
+import Json.Decode as Decode
 import List
 
 
@@ -43,8 +44,10 @@ type alias Model =
 type Msg
     = Update (Result Geolocation.Error Geolocation.Location)
     | MyGeocoderResult (Result Http.Error Geocoding.Response)
+    | NewZomatoRequest (Result Http.Error String)
     | SendGeocodeRequest String
     | Change String
+    | GetRestaurant
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -81,11 +84,13 @@ update msg model =
             in
                 case result of
                     Just value ->
-                        let newPos = { lat = value.geometry.location.latitude, lng = value.geometry.location.longitude }
+                        let
+                            newPos =
+                                { lat = value.geometry.location.latitude, lng = value.geometry.location.longitude }
                         in
-                        ( { model | pos = newPos, msg = "Retrieved Location via search" }
-                        , moveMap newPos
-                        )
+                            ( { model | pos = newPos, msg = "Retrieved Location via search" }
+                            , moveMap newPos
+                            )
 
                     Nothing ->
                         ( { model | msg = "Error" }
@@ -102,6 +107,21 @@ update msg model =
             , Cmd.none
             )
 
+        NewZomatoRequest (Ok newUrl) ->
+            ( { model | msg = toString newUrl }
+            , Cmd.none
+            )
+
+        NewZomatoRequest (Err err) ->
+            ( { model | msg = toString err }
+            , Cmd.none
+            )
+
+        GetRestaurant ->
+            ( model
+            , getRestaurant model.pos.lat model.pos.lng
+            )
+
 
 
 -- VIEW
@@ -112,6 +132,7 @@ view model =
     div []
         [ input [ placeholder "Enter your location", onInput Change, myStyle ] []
         , button [ onClick (SendGeocodeRequest model.input) ] [ text "Get Location" ]
+        , button [ onClick (GetRestaurant) ] [ text "Get Restaurant" ]
         , p [] [ text ("Message: " ++ model.msg) ]
         , p [] [ text ("Input: " ++ toString model.input) ]
         , p [] [ text ("Latitude: " ++ toString model.pos.lat) ]
@@ -152,3 +173,31 @@ myStyle =
         , ( "font-size", "2em" )
         , ( "text-align", "center" )
         ]
+
+
+
+-- HTTP
+
+
+getRestaurant : Float -> Float -> Cmd Msg
+getRestaurant lat lng =
+    let
+        url =
+            "https://developers.zomato.com/api/v2.1/geocode?lat=" ++ toString lat  ++ "&lon=" ++ toString lng
+    in
+        Http.send NewZomatoRequest
+            (Http.request
+                { method = "GET"
+                , headers = [header "user-key" "cf56a7f076c8d0a24251c6ae612709cf"]
+                , url = url
+                , body = Http.emptyBody
+                , expect = Http.expectJson decodeZomatoUrl
+                , timeout = Nothing
+                , withCredentials = False
+                }
+            )
+
+
+decodeZomatoUrl : Decode.Decoder String
+decodeZomatoUrl =
+    Decode.at [ "location", "nearby_restaurants" ] Decode.string
