@@ -1,5 +1,9 @@
 module Main exposing (..)
 
+import Bootstrap.Button as Button
+import Bootstrap.Form as Form
+import Bootstrap.Form.Input as Input
+import Bootstrap.Modal as Modal
 import GMaps exposing (mapMoved, moveMap)
 import Geocoding exposing (..)
 import Geolocation exposing (Location)
@@ -34,6 +38,7 @@ type alias Model =
     { pos : GMPos
     , msg : String
     , input : String
+    , modalVisibility : Modal.Visibility
     }
 
 
@@ -48,6 +53,8 @@ type Msg
     | SendGeocodeRequest String
     | Change String
     | GetRestaurant
+    | CloseModal
+    | ShowModal
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -73,7 +80,7 @@ update msg model =
                     Geocoding.requestForAddress "AIzaSyAduosinhGUarThepjoSF5_rjRgTQM9h2U" locationString
                         |> Geocoding.send MyGeocoderResult
             in
-            ( model
+            ( { model | modalVisibility = Modal.hidden }
             , request
             )
 
@@ -122,6 +129,12 @@ update msg model =
             , getRestaurant model.pos.lat model.pos.lng
             )
 
+        CloseModal ->
+            ( { model | modalVisibility = Modal.hidden }, Cmd.none )
+
+        ShowModal ->
+            ( { model | modalVisibility = Modal.shown }, Cmd.none )
+
 
 
 -- VIEW
@@ -130,10 +143,45 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div []
-        [ input [ placeholder "Enter your location", onInput Change, myStyle ] []
-        , button [ onClick (SendGeocodeRequest model.input) ] [ text "Get Location" ]
-        , button [ onClick GetRestaurant ] [ text "Get Restaurant" ]
-        , p [] [ text ("Message: " ++ model.msg) ]
+        [ changeLocationSection model
+        ]
+
+
+changeLocationSection : Model -> Html Msg
+changeLocationSection model =
+    div [ class "changelocationbar" ]
+        [ Button.button
+            [ Button.large
+            , Button.outlineSecondary
+            , Button.attrs [ onClick ShowModal ]
+            ]
+            [ text "Change Location" ]
+        , Modal.config CloseModal
+            |> Modal.large
+            |> Modal.body []
+                [ Form.form []
+                    [ Html.h3 [] [ text "You Want To Change Your Location?" ]
+                    , Form.group []
+                        [ Input.text
+                            [ Input.attrs [ placeholder "Enter Your Location Then" ]
+                            , Input.onInput Change
+                            ]
+                        ]
+                    ]
+                ]
+            |> Modal.footer []
+                [ Button.button
+                    [ Button.outlineSuccess
+                    , Button.attrs [ onClick (SendGeocodeRequest model.input) ]
+                    ]
+                    [ text "Get Location" ]
+                , Button.button
+                    [ Button.outlineDanger
+                    , Button.attrs [ onClick CloseModal ]
+                    ]
+                    [ text "Cancel" ]
+                ]
+            |> Modal.view model.modalVisibility
         ]
 
 
@@ -143,7 +191,9 @@ view model =
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
-    Geolocation.changes (Update << Ok)
+    Sub.batch
+        [ Geolocation.changes (Update << Ok)
+        ]
 
 
 
@@ -155,6 +205,7 @@ initModel =
     { pos = GMPos 1.292393 103.77572600000008
     , msg = "Trying to get current location.."
     , input = ""
+    , modalVisibility = Modal.hidden
     }
 
 
