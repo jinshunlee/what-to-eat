@@ -150,9 +150,17 @@ subscriptions model =
 -- INIT
 
 
+initModel : Model
+initModel =
+    { pos = GMPos 1.292393 103.77572600000008
+    , msg = "Trying to get current location.."
+    , input = ""
+    }
+
+
 init : ( Model, Cmd Msg )
 init =
-    ( { pos = GMPos 1.292393 103.77572600000008, msg = "Trying to get current location..", input = "" }
+    ( initModel
     , Task.attempt Update Geolocation.now
     )
 
