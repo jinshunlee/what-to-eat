@@ -110,12 +110,12 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div []
-        [ p [] [ text ("Message: " ++ model.msg) ]
+        [ input [ placeholder "Enter your location", onInput Change, myStyle ] []
+        , button [ onClick (SendGeocodeRequest model.input) ] [ text "Get Location" ]
+        , p [] [ text ("Message: " ++ model.msg) ]
         , p [] [ text ("Input: " ++ toString model.input) ]
         , p [] [ text ("Latitude: " ++ toString model.pos.lat) ]
         , p [] [ text ("Longitude: " ++ toString model.pos.lng) ]
-        , input [ placeholder "Enter your location", onInput Change, myStyle ] []
-        , button [ onClick (SendGeocodeRequest model.input) ] [ text "Get Location" ]
         ]
 
 
