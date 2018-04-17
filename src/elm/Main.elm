@@ -1,10 +1,13 @@
 module Main exposing (..)
 
-import Html exposing (Html, div, p, text, button)
+import Bootstrap.Button as Button
+import GMaps exposing (mapMoved, moveMap)
+import Geocoding exposing (..)
+import Geolocation exposing (Location)
+import Html exposing (Html, button, div, p, text)
+import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import SharedModels exposing (GMPos)
-import GMaps exposing (moveMap, mapMoved)
-import Geolocation exposing (Location)
 import Task
 
 
@@ -28,6 +31,8 @@ main =
 type alias Model =
     { pos : GMPos
     , msg : String
+    , changeLocationRequest : Bool
+    , apiKey : String
     }
 
 
@@ -37,6 +42,7 @@ type alias Model =
 
 type Msg
     = Update (Result Geolocation.Error Geolocation.Location)
+    | ChangeLocation
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -47,14 +53,17 @@ update msg model =
                 newPos =
                     { lat = location.latitude, lng = location.longitude }
             in
-                ( { model | pos = newPos, msg = "Retrived Location" }
-                , moveMap newPos
-                )
+            ( { model | pos = newPos, msg = "Retrived Location" }
+            , moveMap newPos
+            )
 
         Update (Err err) ->
             ( { model | msg = toString err }
             , Cmd.none
             )
+
+        ChangeLocation ->
+            ( { model | changeLocationRequest = True }, Cmd.none )
 
 
 
@@ -67,6 +76,19 @@ view model =
         [ p [] [ text ("Message: " ++ model.msg) ]
         , p [] [ text ("Latitude: " ++ toString model.pos.lat) ]
         , p [] [ text ("Longitude: " ++ toString model.pos.lng) ]
+        , Html.hr [] []
+        , div [ class "test" ] [ navigationBar model ]
+        ]
+
+
+navigationBar : Model -> Html Msg
+navigationBar model =
+    div [ class "navigationbar" ]
+        [ Button.button
+            [ Button.outlineDark
+            , Button.attrs [ onClick ChangeLocation ]
+            ]
+            [ text "Change Location" ]
         ]
 
 
@@ -83,8 +105,17 @@ subscriptions model =
 -- INIT
 
 
+initModel : Model
+initModel =
+    { pos = GMPos 1.292393 103.77572600000008
+    , msg = "Trying to get current location.."
+    , changeLocationRequest = False
+    , apiKey = "AIzaSyDxfLP4PFyN4hmxKOc0l2xq_tMswDctRAA"
+    }
+
+
 init : ( Model, Cmd Msg )
 init =
-    ( { pos = GMPos 1.292393 103.77572600000008, msg = "Trying to get current location.." }
+    ( initModel
     , Task.attempt Update Geolocation.now
     )
