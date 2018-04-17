@@ -1,6 +1,8 @@
 module Main exposing (..)
 
 import Bootstrap.Button as Button
+import Bootstrap.Card as Card
+import Bootstrap.Card.Block as Block
 import Bootstrap.Form as Form
 import Bootstrap.Form.Input as Input
 import Bootstrap.Modal as Modal
@@ -14,8 +16,8 @@ import Http exposing (..)
 import Json.Decode as Decode
 import List
 import SharedModels exposing (GMPos)
-import Task
 import String exposing (..)
+import Task
 
 
 -- MAIN
@@ -42,6 +44,8 @@ type alias Model =
     , modalVisibility : Modal.Visibility
     , restaurantResult : Restaurants
     , currentIndex : Int
+    , restaurantVisibility : String
+    , cardRestaurant : Restaurant
     }
 
 
@@ -58,6 +62,7 @@ type Msg
     | GetRestaurant
     | CloseModal
     | ShowModal
+    | GetNextRestaurant
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -83,7 +88,11 @@ update msg model =
                     Geocoding.requestForAddress "AIzaSyAduosinhGUarThepjoSF5_rjRgTQM9h2U" locationString
                         |> Geocoding.send MyGeocoderResult
             in
-            ( { model | modalVisibility = Modal.hidden, input = "" }
+            ( { model
+                | modalVisibility = Modal.hidden
+                , input = ""
+                , restaurantVisibility = "hidden"
+              }
             , request
             )
 
@@ -127,21 +136,28 @@ update msg model =
                 result =
                     List.head results
             in
-                case result of
-                    Just result ->
-                        let
-                            newPos =
-                                { lat = Result.withDefault 0 (String.toFloat result.lat)
-                                , lng = Result.withDefault 0 (String.toFloat result.lng) }
-                        in
-                            ( { model | pos = newPos, msg = "Retrieved Suggested Restaurant", restaurantResult = results }
-                            , moveMap newPos
-                            )
+            case result of
+                Just result ->
+                    let
+                        newPos =
+                            { lat = Result.withDefault 0 (String.toFloat result.lat)
+                            , lng = Result.withDefault 0 (String.toFloat result.lng)
+                            }
+                    in
+                    ( { model
+                        | pos = newPos
+                        , msg = "Retrieved Suggested Restaurant"
+                        , restaurantResult = rotateRestaurant results
+                        , restaurantVisibility = "visible"
+                        , cardRestaurant = result
+                      }
+                    , moveMap newPos
+                    )
 
-                    Nothing ->
-                        ( { model | msg = "Error" }
-                        , Cmd.none
-                        )
+                Nothing ->
+                    ( { model | msg = "Error" }
+                    , Cmd.none
+                    )
 
         NewZomatoRequest (Err err) ->
             ( { model | msg = toString err }
@@ -159,6 +175,48 @@ update msg model =
         ShowModal ->
             ( { model | modalVisibility = Modal.shown }, Cmd.none )
 
+        GetNextRestaurant ->
+            let
+                newList =
+                    rotateRestaurant model.restaurantResult
+
+                ele =
+                    List.head model.restaurantResult
+            in
+            case ele of
+                Just ele ->
+                    let
+                        newPos =
+                            { lat = convertToFloat ele.lat
+                            , lng = convertToFloat ele.lng
+                            }
+                    in
+                    ( { model
+                        | restaurantResult = newList
+                        , cardRestaurant = ele
+                        , pos = newPos
+                      }
+                    , moveMap newPos
+                    )
+
+                Nothing ->
+                    ( { model | msg = "Error" }
+                    , Cmd.none
+                    )
+
+
+rotateRestaurant : Restaurants -> Restaurants
+rotateRestaurant lst =
+    let
+        eleList =
+            List.take 1 lst
+    in
+    let
+        restList =
+            List.drop 1 lst
+    in
+    List.append restList eleList
+
 
 
 -- VIEW
@@ -168,8 +226,73 @@ view : Model -> Html Msg
 view model =
     div []
         [ navigationbar model
+        , restaurantSection model
         , p [] [ text (toString model) ]
         ]
+
+
+restaurantSection : Model -> Html Msg
+restaurantSection model =
+    div [ class "restaurantcard", style [ ( "visibility", model.restaurantVisibility ) ] ]
+        [ Card.config [ Card.attrs [ style [ ( "width", "20rem" ) ] ] ]
+            |> Card.header [ class "text-center" ]
+                [ Html.img [ class "pic-style", src (getImage model.cardRestaurant) ] []
+                , Html.h3 [] [ text model.cardRestaurant.name ]
+                ]
+            |> Card.block []
+                [ Block.titleH4 [ class "test" ]
+                    [ Html.img [ class "rating-pic", src (getRatingImage model.cardRestaurant) ] []
+                    , text model.cardRestaurant.rating
+                    ]
+                , Block.text [] [ text model.cardRestaurant.address ]
+                , Block.link [ href model.cardRestaurant.url ] [ text "Website" ]
+                , Block.custom <|
+                    Button.button
+                        [ Button.primary
+                        , Button.attrs [ onClick GetNextRestaurant ]
+                        ]
+                        [ text "Get Another Restaurant" ]
+                ]
+            |> Card.view
+        ]
+
+
+getRatingImage : Restaurant -> String
+getRatingImage restaurant =
+    if convertToFloat restaurant.rating >= 5.0 then
+        "static/img/5-stars.jpg"
+    else if convertToFloat restaurant.rating >= 4.0 then
+        "static/img/4-stars.jpg"
+    else if convertToFloat restaurant.rating >= 3.0 then
+        "static/img/3-stars.jpg"
+    else if convertToFloat restaurant.rating >= 2.0 then
+        "static/img/2-stars.jpg"
+    else if convertToFloat restaurant.rating >= 1.0 then
+        "static/img/1-stars.jpg"
+    else
+        "static/img/0-stars.jpg"
+
+
+convertToFloat : String -> Float
+convertToFloat str =
+    let
+        result =
+            String.toFloat str
+    in
+    case result of
+        Ok value ->
+            value
+
+        Err error ->
+            0.0
+
+
+getImage : Restaurant -> String
+getImage restaurant =
+    if isEmpty restaurant.featured_image then
+        "https://i.imgur.com/9q6NxKo.png"
+    else
+        restaurant.featured_image
 
 
 navigationbar : Model -> Html Msg
@@ -254,6 +377,8 @@ initModel =
     , modalVisibility = Modal.hidden
     , restaurantResult = []
     , currentIndex = 0
+    , restaurantVisibility = "hidden"
+    , cardRestaurant = Restaurant "" "" "" "" "" "" ""
     }
 
 
@@ -287,8 +412,6 @@ getRestaurant lat lng =
         )
 
 
-
-
 type alias Restaurant =
     { name : String
     , rating : String
@@ -314,8 +437,6 @@ decodeRestaurant =
         (Decode.at [ "restaurant", "featured_image" ] Decode.string)
         (Decode.at [ "restaurant", "url" ] Decode.string)
         (Decode.at [ "restaurant", "location", "address" ] Decode.string)
-
-
 
 
 decodeRestaurants : Decode.Decoder (List Restaurant)
