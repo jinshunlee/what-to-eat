@@ -80,7 +80,7 @@ update msg model =
                     Geocoding.requestForAddress "AIzaSyAduosinhGUarThepjoSF5_rjRgTQM9h2U" locationString
                         |> Geocoding.send MyGeocoderResult
             in
-            ( { model | modalVisibility = Modal.hidden }
+            ( { model | modalVisibility = Modal.hidden, input = "" }
             , request
             )
 
@@ -130,7 +130,7 @@ update msg model =
             )
 
         CloseModal ->
-            ( { model | modalVisibility = Modal.hidden }, Cmd.none )
+            ( { model | modalVisibility = Modal.hidden, input = "" }, Cmd.none )
 
         ShowModal ->
             ( { model | modalVisibility = Modal.shown }, Cmd.none )
@@ -143,46 +143,55 @@ update msg model =
 view : Model -> Html Msg
 view model =
     div []
-        [ changeLocationSection model
+        [ navigationbar model
+        , button [ onClick GetRestaurant ] [ text "Get Restaurant" ]
+        , p [] [ text ("Message: " ++ model.msg) ]
         ]
 
 
-changeLocationSection : Model -> Html Msg
-changeLocationSection model =
-    div [ class "changelocationbar" ]
+navigationbar : Model -> Html Msg
+navigationbar model =
+    div [ class "navigationbar" ]
         [ Button.button
             [ Button.large
             , Button.outlineSecondary
             , Button.attrs [ onClick ShowModal ]
             ]
             [ text "Change Location" ]
-        , Modal.config CloseModal
-            |> Modal.large
-            |> Modal.body []
-                [ Form.form []
-                    [ Html.h3 [] [ text "You Want To Change Your Location?" ]
-                    , Form.group []
-                        [ Input.text
-                            [ Input.attrs [ placeholder "Enter Your Location Then" ]
-                            , Input.onInput Change
-                            ]
+        , modal model
+        ]
+
+
+modal : Model -> Html Msg
+modal model =
+    Modal.config CloseModal
+        |> Modal.large
+        |> Modal.body []
+            [ Form.form []
+                [ Html.h3 [] [ text "You Want To Change Your Location?" ]
+                , Html.br [] []
+                , Form.group []
+                    [ Input.text
+                        [ Input.attrs [ placeholder "Enter Your Location Then" ]
+                        , Input.onInput Change
+                        , Input.value model.input
                         ]
                     ]
                 ]
-            |> Modal.footer []
-                [ Button.button
-                    [ Button.outlineSuccess
-                    , Button.attrs [ onClick (SendGeocodeRequest model.input) ]
-                    ]
-                    [ text "Get Location" ]
-                , Button.button
-                    [ Button.outlineDanger
-                    , Button.attrs [ onClick CloseModal ]
-                    ]
-                    [ text "Cancel" ]
+            ]
+        |> Modal.footer []
+            [ Button.button
+                [ Button.outlineSuccess
+                , Button.attrs [ onClick (SendGeocodeRequest model.input) ]
                 ]
-            |> Modal.view model.modalVisibility
-        ]
+                [ text "Get Location" ]
+            , Button.button
+                [ Button.outlineDanger
+                , Button.attrs [ onClick CloseModal ]
+                ]
+                [ text "Cancel" ]
+            ]
+        |> Modal.view model.modalVisibility
 
 
 
