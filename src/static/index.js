@@ -13,7 +13,7 @@ map.ports.moveMap.subscribe(function(gmPos) {
     gmap.setCenter(myLatlng);
     marker.setPosition(myLatlng)
 });
-var myLatlng = new google.maps.LatLng(1.3521, 103.8198);
+var myLatlng = new google.maps.LatLng(1.3030487878, 103.825808363);
 var mapOptions = {
   zoom: 17.9,
   center: myLatlng

@@ -363,7 +363,7 @@ subscriptions model =
 
 initModel : Model
 initModel =
-    { pos = GMPos 1.3521 103.8198
+    { pos = GMPos 1.3030487878 103.825808363
     , msg = "Trying to get current location.."
     , input = ""
     , modalVisibility = Modal.hidden
