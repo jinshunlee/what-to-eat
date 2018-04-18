@@ -73,9 +73,9 @@ update msg model =
                 newPos =
                     { lat = location.latitude, lng = location.longitude }
             in
-            ( { model | pos = newPos, msg = "Automatically Retrived Location" }
-            , moveMap newPos
-            )
+                ( { model | pos = newPos, msg = "Automatically Retrived Location" }
+                , moveMap newPos
+                )
 
         Update (Err err) ->
             ( { model | msg = toString err }
@@ -88,38 +88,38 @@ update msg model =
                     Geocoding.requestForAddress "AIzaSyAduosinhGUarThepjoSF5_rjRgTQM9h2U" locationString
                         |> Geocoding.send MyGeocoderResult
             in
-            ( { model
-                | modalVisibility = Modal.hidden
-                , input = ""
-                , restaurantVisibility = "hidden"
-              }
-            , request
-            )
+                ( { model
+                    | modalVisibility = Modal.hidden
+                    , input = ""
+                    , restaurantVisibility = "hidden"
+                  }
+                , request
+                )
 
         MyGeocoderResult (Ok response) ->
             let
                 result =
                     List.head response.results
             in
-            case result of
-                Just value ->
-                    let
-                        newPos =
-                            { lat = value.geometry.location.latitude
-                            , lng = value.geometry.location.longitude
-                            }
-                    in
-                    ( { model
-                        | pos = newPos
-                        , msg = "Retrieved Location via text input"
-                      }
-                    , moveMap newPos
-                    )
+                case result of
+                    Just value ->
+                        let
+                            newPos =
+                                { lat = value.geometry.location.latitude
+                                , lng = value.geometry.location.longitude
+                                }
+                        in
+                            ( { model
+                                | pos = newPos
+                                , msg = "Retrieved Location via text input"
+                              }
+                            , moveMap newPos
+                            )
 
-                Nothing ->
-                    ( { model | msg = "Error" }
-                    , Cmd.none
-                    )
+                    Nothing ->
+                        ( { model | msg = "Error" }
+                        , Cmd.none
+                        )
 
         MyGeocoderResult (Err err) ->
             ( { model | msg = toString err }
@@ -136,28 +136,28 @@ update msg model =
                 result =
                     List.head results
             in
-            case result of
-                Just result ->
-                    let
-                        newPos =
-                            { lat = Result.withDefault 0 (String.toFloat result.lat)
-                            , lng = Result.withDefault 0 (String.toFloat result.lng)
-                            }
-                    in
-                    ( { model
-                        | pos = newPos
-                        , msg = "Retrieved Suggested Restaurant"
-                        , restaurantResult = rotateRestaurant results
-                        , restaurantVisibility = "visible"
-                        , cardRestaurant = result
-                      }
-                    , moveMap newPos
-                    )
+                case result of
+                    Just result ->
+                        let
+                            newPos =
+                                { lat = Result.withDefault 0 (String.toFloat result.lat)
+                                , lng = Result.withDefault 0 (String.toFloat result.lng)
+                                }
+                        in
+                            ( { model
+                                | pos = newPos
+                                , msg = "Retrieved Suggested Restaurant"
+                                , restaurantResult = rotateRestaurant results
+                                , restaurantVisibility = "visible"
+                                , cardRestaurant = result
+                              }
+                            , moveMap newPos
+                            )
 
-                Nothing ->
-                    ( { model | msg = "Error" }
-                    , Cmd.none
-                    )
+                    Nothing ->
+                        ( { model | msg = "Error" }
+                        , Cmd.none
+                        )
 
         NewZomatoRequest (Err err) ->
             ( { model | msg = toString err }
@@ -183,26 +183,26 @@ update msg model =
                 ele =
                     List.head model.restaurantResult
             in
-            case ele of
-                Just ele ->
-                    let
-                        newPos =
-                            { lat = convertToFloat ele.lat
-                            , lng = convertToFloat ele.lng
-                            }
-                    in
-                    ( { model
-                        | restaurantResult = newList
-                        , cardRestaurant = ele
-                        , pos = newPos
-                      }
-                    , moveMap newPos
-                    )
+                case ele of
+                    Just ele ->
+                        let
+                            newPos =
+                                { lat = convertToFloat ele.lat
+                                , lng = convertToFloat ele.lng
+                                }
+                        in
+                            ( { model
+                                | restaurantResult = newList
+                                , cardRestaurant = ele
+                                , pos = newPos
+                              }
+                            , moveMap newPos
+                            )
 
-                Nothing ->
-                    ( { model | msg = "Error" }
-                    , Cmd.none
-                    )
+                    Nothing ->
+                        ( { model | msg = "Error" }
+                        , Cmd.none
+                        )
 
 
 rotateRestaurant : Restaurants -> Restaurants
@@ -211,11 +211,11 @@ rotateRestaurant lst =
         eleList =
             List.take 1 lst
     in
-    let
-        restList =
-            List.drop 1 lst
-    in
-    List.append restList eleList
+        let
+            restList =
+                List.drop 1 lst
+        in
+            List.append restList eleList
 
 
 
@@ -279,12 +279,12 @@ convertToFloat str =
         result =
             String.toFloat str
     in
-    case result of
-        Ok value ->
-            value
+        case result of
+            Ok value ->
+                value
 
-        Err error ->
-            0.0
+            Err error ->
+                0.0
 
 
 navigationbar : Model -> Html Msg
@@ -363,7 +363,7 @@ subscriptions model =
 
 initModel : Model
 initModel =
-    { pos = GMPos 1.292393 103.77572600000008
+    { pos = GMPos 1.3521 103.8198
     , msg = "Trying to get current location.."
     , input = ""
     , modalVisibility = Modal.hidden
@@ -391,17 +391,17 @@ getRestaurant lat lng =
         url =
             "https://developers.zomato.com/api/v2.1/search?sort=real_distance&count=10&lat=" ++ toString lat ++ "&lon=" ++ toString lng
     in
-    Http.send NewZomatoRequest
-        (Http.request
-            { method = "GET"
-            , headers = [ header "user-key" "cf56a7f076c8d0a24251c6ae612709cf" ]
-            , url = url
-            , body = Http.emptyBody
-            , expect = Http.expectJson decodeZomatoJSON
-            , timeout = Nothing
-            , withCredentials = False
-            }
-        )
+        Http.send NewZomatoRequest
+            (Http.request
+                { method = "GET"
+                , headers = [ header "user-key" "cf56a7f076c8d0a24251c6ae612709cf" ]
+                , url = url
+                , body = Http.emptyBody
+                , expect = Http.expectJson decodeZomatoJSON
+                , timeout = Nothing
+                , withCredentials = False
+                }
+            )
 
 
 type alias Restaurant =
