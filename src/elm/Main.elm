@@ -227,29 +227,29 @@ view model =
     div []
         [ navigationbar model
         , restaurantSection model
-        , p [] [ text (toString model) ]
         ]
 
 
 restaurantSection : Model -> Html Msg
 restaurantSection model =
     div [ class "restaurantcard", style [ ( "visibility", model.restaurantVisibility ) ] ]
-        [ Card.config [ Card.attrs [ style [ ( "width", "20rem" ) ] ] ]
+        [ Card.config [ Card.attrs [ style [ ( "width", "400px" ) ] ] ]
             |> Card.header [ class "text-center" ]
                 [ Html.img [ class "pic-style", src (getImage model.cardRestaurant) ] []
                 , Html.h3 [] [ text model.cardRestaurant.name ]
                 ]
             |> Card.block []
-                [ Block.titleH4 [ class "test" ]
+                [ Block.titleH4 [ class "card-header" ]
                     [ Html.img [ class "rating-pic", src (getRatingImage model.cardRestaurant) ] []
                     , text model.cardRestaurant.rating
                     ]
-                , Block.text [] [ text model.cardRestaurant.address ]
-                , Block.link [ href model.cardRestaurant.url ] [ text "Website" ]
+                , Block.text [ class "card-text" ] [ text model.cardRestaurant.address ]
+                , Block.link [ class "card-link", href model.cardRestaurant.url ] [ text "Website" ]
+                , Block.text [] []
                 , Block.custom <|
                     Button.button
-                        [ Button.primary
-                        , Button.attrs [ onClick GetNextRestaurant ]
+                        [ Button.secondary
+                        , Button.attrs [ class "card-button", onClick GetNextRestaurant ]
                         ]
                         [ text "Get Another Restaurant" ]
                 ]
@@ -290,7 +290,7 @@ convertToFloat str =
 getImage : Restaurant -> String
 getImage restaurant =
     if isEmpty restaurant.featured_image then
-        "https://i.imgur.com/9q6NxKo.png"
+        "static/img/broken-image.jpg"
     else
         restaurant.featured_image
 
@@ -302,7 +302,7 @@ navigationbar model =
             [ Html.ul [ id "horizontal-list" ]
                 [ Html.li []
                     [ Button.button
-                        [ Button.large
+                        [ Button.small
                         , Button.outlineSecondary
                         , Button.attrs [ onClick ShowModal ]
                         ]
@@ -310,7 +310,7 @@ navigationbar model =
                     ]
                 , Html.li []
                     [ Button.button
-                        [ Button.large
+                        [ Button.small
                         , Button.outlineSecondary
                         , Button.attrs [ onClick GetRestaurant ]
                         ]
