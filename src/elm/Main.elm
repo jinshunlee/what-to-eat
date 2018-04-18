@@ -304,7 +304,7 @@ navigationbar model =
                     [ Button.button
                         [ Button.small
                         , Button.outlineSecondary
-                        , Button.attrs [ onClick ShowModal ]
+                        , Button.attrs [ onClick ShowModal, style [ ( "font-size", "15px" ) ] ]
                         ]
                         [ text "Change Location" ]
                     ]
@@ -312,7 +312,7 @@ navigationbar model =
                     [ Button.button
                         [ Button.small
                         , Button.outlineSecondary
-                        , Button.attrs [ onClick GetRestaurant ]
+                        , Button.attrs [ onClick GetRestaurant, style [ ( "font-size", "15px" ) ] ]
                         ]
                         [ text "Get Restaurant" ]
                     ]

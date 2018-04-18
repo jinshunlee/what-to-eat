@@ -71,12 +71,12 @@ height: 20px;
 }
 
 ul#horizontal-list {
-  min-width: 696px;
+  min-width:inherit;
   list-style: none;
-  padding-top: 10px;
+  padding-top: 5px;
 }
 
 ul#horizontal-list li {
   display: inline;
-  padding: inherit;
+  margin: 15px;
 }
