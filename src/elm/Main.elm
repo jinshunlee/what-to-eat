@@ -235,7 +235,7 @@ restaurantSection model =
     div [ class "restaurantcard", style [ ( "visibility", model.restaurantVisibility ) ] ]
         [ Card.config [ Card.attrs [ style [ ( "width", "400px" ) ] ] ]
             |> Card.header [ class "text-center" ]
-                [ Html.img [ class "pic-style", src (getImage model.cardRestaurant) ] []
+                [ Html.img [ class "pic-style", src model.cardRestaurant.featured_image ] []
                 , Html.h3 [] [ text model.cardRestaurant.name ]
                 ]
             |> Card.block []
@@ -285,14 +285,6 @@ convertToFloat str =
 
         Err error ->
             0.0
-
-
-getImage : Restaurant -> String
-getImage restaurant =
-    if isEmpty restaurant.featured_image then
-        "static/img/broken-image.jpg"
-    else
-        restaurant.featured_image
 
 
 navigationbar : Model -> Html Msg
