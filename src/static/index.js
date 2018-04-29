@@ -6,9 +6,8 @@ require( '../../node_modules/bootstrap-sass/assets/javascripts/bootstrap.js' ); 
 var Elm = require( '../elm/Main' );
 var div = document.getElementById('main');
 var mapDiv = document.getElementById('map');
-var map = Elm.Main.embed(div);
+var map = Elm.Main.fullscreen();
 map.ports.moveMap.subscribe(function(gmPos) {
-    console.log("received", gmPos);
     var myLatlng = new google.maps.LatLng(gmPos);
     gmap.setCenter(myLatlng);
     marker.setPosition(myLatlng)
@@ -24,10 +23,3 @@ var marker = new google.maps.Marker({
   title: "Current Location"
 });
 marker.setMap(gmap);
-gmap.addListener('drag', function() {
-  var newPos = {
-    lat: gmap.getCenter().lat(),
-    lng: gmap.getCenter().lng()
-  };
-  map.ports.mapMoved.send(newPos);
-});
